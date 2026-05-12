@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Sparkles } from "lucide-react";
 import { UploadZone } from "@/components/edi/UploadZone";
@@ -7,48 +8,87 @@ import { ProcessingState } from "@/components/edi/ProcessingState";
 import { DataTable, type MenuItem } from "@/components/edi/DataTable";
 import { AdjustPanel } from "@/components/edi/AdjustPanel";
 import { Toaster } from "@/components/ui/sonner";
+import { extractMenu } from "@/lib/extract.functions";
 
 export const Route = createFileRoute("/")({
   component: Index,
 });
 
-const MOCK: MenuItem[] = [
-  { id: "1", name: "Bruschetta de Tomate", price: 28.9, description: "Pão italiano tostado com tomate, manjericão e azeite extra virgem." },
-  { id: "2", name: "Risoto de Funghi", price: 64.5, description: "Arroz arbóreo com mix de cogumelos, vinho branco e parmesão." },
-  { id: "3", name: "Filé ao Molho Madeira", price: 89.0, description: "Filé mignon grelhado, molho madeira e batatas rústicas." },
-  { id: "4", name: "Salmão Grelhado", price: 78.0, description: "Salmão fresco com legumes salteados e purê de batata baroa." },
-  { id: "5", name: "Pizza Margherita", price: 52.0, description: "Massa artesanal, molho de tomate, mussarela de búfala e manjericão." },
-  { id: "6", name: "Tiramisù", price: 24.0, description: "Sobremesa italiana com café, mascarpone e cacau." },
-];
-
 type State = "idle" | "processing" | "ready";
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      const base64 = result.includes(",") ? result.split(",")[1] : result;
+      resolve(base64);
+    };
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
 
 function Index() {
   const [state, setState] = useState<State>("idle");
   const [progress, setProgress] = useState(0);
   const [items, setItems] = useState<MenuItem[]>([]);
+  const extract = useServerFn(extractMenu);
 
-  useEffect(() => {
-    if (state !== "processing") return;
-    setProgress(0);
-    const t = setInterval(() => {
-      setProgress((p) => {
-        if (p >= 100) {
-          clearInterval(t);
-          setItems(MOCK);
-          setState("ready");
-          toast.success("Cardápio analisado com sucesso");
-          return 100;
-        }
-        return p + 8;
-      });
-    }, 180);
-    return () => clearInterval(t);
-  }, [state]);
+  const handleUpload = async (files: File[]) => {
+    const file = files[0];
+    if (!file) return;
+    const allowed = ["image/png", "image/jpeg", "application/pdf"];
+    if (!allowed.includes(file.type)) {
+      toast.error("Formato não suportado", { description: "Envie PNG, JPG ou PDF." });
+      return;
+    }
+    if (file.size > 15 * 1024 * 1024) {
+      toast.error("Arquivo muito grande", { description: "Máximo 15 MB." });
+      return;
+    }
 
-  const handleUpload = (files: File[]) => {
-    toast(`${files.length} arquivo(s) recebido(s)`, { description: files[0]?.name });
     setState("processing");
+    setProgress(8);
+    const interval = setInterval(() => {
+      setProgress((p) => (p < 88 ? p + Math.random() * 6 : p));
+    }, 350);
+
+    try {
+      const fileBase64 = await fileToBase64(file);
+      const result = await extract({
+        data: { fileBase64, mimeType: file.type, fileName: file.name },
+      });
+      clearInterval(interval);
+      setProgress(100);
+
+      if (result.error) {
+        toast.error("Não foi possível extrair", { description: result.error });
+        setState("idle");
+        return;
+      }
+      if (!result.items.length) {
+        toast.warning("Nenhum item encontrado no cardápio.");
+        setState("idle");
+        return;
+      }
+
+      setItems(
+        result.items.map((it, idx) => ({
+          id: `${Date.now()}-${idx}`,
+          name: it.name,
+          price: Number(it.price) || 0,
+          description: it.description ?? "",
+        })),
+      );
+      setState("ready");
+      toast.success(`${result.items.length} itens extraídos`);
+    } catch (err) {
+      clearInterval(interval);
+      console.error(err);
+      toast.error("Erro inesperado ao processar o arquivo.");
+      setState("idle");
+    }
   };
 
   const handleClear = () => {
@@ -58,13 +98,41 @@ function Index() {
   };
 
   const handleExport = (format: "csv" | "xlsx") => {
-    toast.success(`Exportando para ${format.toUpperCase()}`);
+    if (!items.length) return;
+    const header = ["Produto", "Preço", "Descrição"];
+    const rows = items.map((i) => [i.name, i.price.toFixed(2), i.description]);
+    const csv = [header, ...rows]
+      .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+    const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `cardapio.${format === "xlsx" ? "csv" : "csv"}`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(`Exportado como ${format.toUpperCase()}`);
   };
 
   const handleCommand = (cmd: string) => {
-    if (/aumente.*(\d+)\s*%/i.test(cmd)) {
-      const pct = Number(cmd.match(/(\d+)\s*%/)?.[1] ?? 0);
+    const pctMatch = cmd.match(/aumente.*?(\d+(?:[.,]\d+)?)\s*%/i);
+    const decMatch = cmd.match(/(?:diminua|reduza).*?(\d+(?:[.,]\d+)?)\s*%/i);
+    if (pctMatch) {
+      const pct = Number(pctMatch[1].replace(",", "."));
       setItems((prev) => prev.map((i) => ({ ...i, price: +(i.price * (1 + pct / 100)).toFixed(2) })));
+      return;
+    }
+    if (decMatch) {
+      const pct = Number(decMatch[1].replace(",", "."));
+      setItems((prev) => prev.map((i) => ({ ...i, price: +(i.price * (1 - pct / 100)).toFixed(2) })));
+      return;
+    }
+    if (/arredonde/i.test(cmd)) {
+      setItems((prev) => prev.map((i) => ({ ...i, price: Math.round(i.price) })));
+      return;
+    }
+    if (/remova.*sem descri/i.test(cmd)) {
+      setItems((prev) => prev.filter((i) => i.description.trim().length > 0));
     }
   };
 
@@ -86,7 +154,7 @@ function Index() {
             </div>
           </div>
           <span className="hidden rounded-full border bg-card px-3 py-1 text-xs text-muted-foreground sm:inline">
-            v1.0 · beta
+            powered by AI
           </span>
         </div>
       </header>
