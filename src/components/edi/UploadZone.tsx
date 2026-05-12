@@ -49,17 +49,18 @@ export function UploadZone({ onUpload }: Props) {
           ou <span className="font-medium text-primary">clique para selecionar</span> um arquivo
         </p>
       </div>
-      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+      <div className="flex flex-wrap items-center justify-center gap-3 text-xs text-muted-foreground">
         <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1">
-          <FileImage className="h-3.5 w-3.5" /> PNG, JPG
+          <FileImage className="h-3.5 w-3.5" /> PNG, JPG, WEBP, HEIC, GIF
         </span>
         <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1">
           <FileText className="h-3.5 w-3.5" /> PDF
         </span>
+        <span className="text-[11px] text-muted-foreground/70">até 30 MB</span>
       </div>
       <input
         type="file"
-        accept="image/png,image/jpeg,application/pdf"
+        accept="image/png,image/jpeg,image/webp,image/heic,image/heif,image/gif,application/pdf"
         multiple
         className="hidden"
         onChange={(e) => {
