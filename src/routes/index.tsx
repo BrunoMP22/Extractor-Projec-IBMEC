@@ -38,13 +38,23 @@ function Index() {
   const handleUpload = async (files: File[]) => {
     const file = files[0];
     if (!file) return;
-    const allowed = ["image/png", "image/jpeg", "application/pdf"];
+    const allowed = [
+      "image/png",
+      "image/jpeg",
+      "image/webp",
+      "image/heic",
+      "image/heif",
+      "image/gif",
+      "application/pdf",
+    ];
     if (!allowed.includes(file.type)) {
-      toast.error("Formato não suportado", { description: "Envie PNG, JPG ou PDF." });
+      toast.error("Formato não suportado", {
+        description: "Envie PNG, JPG, WEBP, HEIC, GIF ou PDF.",
+      });
       return;
     }
-    if (file.size > 15 * 1024 * 1024) {
-      toast.error("Arquivo muito grande", { description: "Máximo 15 MB." });
+    if (file.size > 30 * 1024 * 1024) {
+      toast.error("Arquivo muito grande", { description: "Máximo 30 MB." });
       return;
     }
 
