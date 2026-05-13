@@ -5,8 +5,12 @@ import { createLovableAiGatewayProvider } from "./ai-gateway";
 
 const ItemSchema = z.object({
   name: z.string(),
-  price: z.number(),
-  description: z.string(),
+  price: z.union([z.number(), z.string()]).transform((v) => {
+    if (typeof v === "number") return v;
+    const n = parseFloat(String(v).replace(/[^\d,.\-]/g, "").replace(",", "."));
+    return Number.isFinite(n) ? n : 0;
+  }).nullable().optional().transform((v) => v ?? 0),
+  description: z.string().nullable().optional().transform((v) => v ?? ""),
 });
 
 const ResultSchema = z.object({ items: z.array(ItemSchema) });
