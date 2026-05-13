@@ -32,14 +32,20 @@ export const extractMenu = createServerFn({ method: "POST" })
           {
             role: "system",
             content:
-              "Você extrai itens de cardápios. Retorne todos os pratos/produtos visíveis com nome, preço (number em reais, sem símbolo) e uma descrição curta. Se não houver descrição, gere uma curta a partir do nome. Se preço estiver ilegível, use 0.",
+              "Você é um extrator OCR de cardápios. Regras estritas:\n" +
+              "1. Extraia APENAS itens REALMENTE visíveis na imagem/PDF. NUNCA invente, complete ou imagine pratos, preços ou descrições.\n" +
+              "2. Use exatamente o texto do cardápio (mesma língua, mesma grafia, acentos preservados).\n" +
+              "3. Preço deve ser número decimal em reais (ex: 29.90). Se ilegível ou ausente, use 0.\n" +
+              "4. Para descrição use SOMENTE o que está escrito junto ao item. Se não houver descrição no cardápio, retorne string vazia ''. NÃO gere descrição genérica.\n" +
+              "5. Ignore cabeçalhos de seção, endereços, telefones, redes sociais e textos promocionais — só itens vendáveis.\n" +
+              "6. Se a imagem não for um cardápio ou estiver ilegível, retorne items: [].",
           },
           {
             role: "user",
             content: [
               {
                 type: "text",
-                text: "Extraia todos os itens deste cardápio.",
+                text: "Extraia todos os itens reais deste cardápio respeitando as regras.",
               },
               {
                 type: "file",
