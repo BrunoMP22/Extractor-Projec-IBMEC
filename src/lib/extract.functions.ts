@@ -5,8 +5,12 @@ import { createLovableAiGatewayProvider } from "./ai-gateway";
 
 const ItemSchema = z.object({
   name: z.string(),
-  price: z.number(),
-  description: z.string(),
+  price: z.union([z.number(), z.string()]).transform((v) => {
+    if (typeof v === "number") return v;
+    const n = parseFloat(String(v).replace(/[^\d,.\-]/g, "").replace(",", "."));
+    return Number.isFinite(n) ? n : 0;
+  }).nullable().optional().transform((v) => v ?? 0),
+  description: z.string().nullable().optional().transform((v) => v ?? ""),
 });
 
 const ResultSchema = z.object({ items: z.array(ItemSchema) });
@@ -24,40 +28,63 @@ export const extractMenu = createServerFn({ method: "POST" })
     const gateway = createLovableAiGatewayProvider(key);
     const model = gateway("google/gemini-2.5-flash");
 
+    const systemPrompt =
+      "Você é um extrator OCR de cardápios. Regras:\n" +
+      "1. Extraia APENAS itens REALMENTE visíveis. NUNCA invente.\n" +
+      "2. Preserve grafia e acentos.\n" +
+      "3. Preço: número decimal em reais (ex: 29.90). Se ilegível/ausente, use 0.\n" +
+      "4. Descrição: somente o que está escrito junto ao item; se não houver, use ''.\n" +
+      "5. Ignore cabeçalhos, endereços, telefones, redes sociais, promoções.\n" +
+      "6. Se não for cardápio ou estiver ilegível, retorne items: [].";
+
+    const userContent = [
+      { type: "text" as const, text: "Extraia todos os itens reais deste cardápio." },
+      { type: "file" as const, data: data.fileBase64, mediaType: data.mimeType },
+    ];
+
     try {
-      const { experimental_output } = await generateText({
+      // Tentativa 1: structured output
+      try {
+        const { experimental_output } = await generateText({
+          model,
+          output: Output.object({ schema: ResultSchema }),
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userContent },
+          ],
+        });
+        return { items: experimental_output.items, error: null };
+      } catch (structuredErr) {
+        console.warn("Structured output falhou, tentando fallback JSON:", structuredErr instanceof Error ? structuredErr.message : structuredErr);
+      }
+
+      // Fallback: pedir JSON puro e parsear
+      const { text } = await generateText({
         model,
-        output: Output.object({ schema: ResultSchema }),
         messages: [
           {
             role: "system",
             content:
-              "Você é um extrator OCR de cardápios. Regras estritas:\n" +
-              "1. Extraia APENAS itens REALMENTE visíveis na imagem/PDF. NUNCA invente, complete ou imagine pratos, preços ou descrições.\n" +
-              "2. Use exatamente o texto do cardápio (mesma língua, mesma grafia, acentos preservados).\n" +
-              "3. Preço deve ser número decimal em reais (ex: 29.90). Se ilegível ou ausente, use 0.\n" +
-              "4. Para descrição use SOMENTE o que está escrito junto ao item. Se não houver descrição no cardápio, retorne string vazia ''. NÃO gere descrição genérica.\n" +
-              "5. Ignore cabeçalhos de seção, endereços, telefones, redes sociais e textos promocionais — só itens vendáveis.\n" +
-              "6. Se a imagem não for um cardápio ou estiver ilegível, retorne items: [].",
+              systemPrompt +
+              '\n\nResponda APENAS com JSON válido no formato: {"items":[{"name":"...","price":0,"description":"..."}]} sem markdown, sem texto extra.',
           },
-          {
-            role: "user",
-            content: [
-              {
-                type: "text",
-                text: "Extraia todos os itens reais deste cardápio respeitando as regras.",
-              },
-              {
-                type: "file",
-                data: data.fileBase64,
-                mediaType: data.mimeType,
-              },
-            ],
-          },
+          { role: "user", content: userContent },
         ],
       });
 
-      return { items: experimental_output.items, error: null };
+      const cleaned = text.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
+      const jsonStart = cleaned.indexOf("{");
+      const jsonEnd = cleaned.lastIndexOf("}");
+      if (jsonStart === -1 || jsonEnd === -1) {
+        return { items: [], error: "Não consegui interpretar a resposta da IA." };
+      }
+      const raw = JSON.parse(cleaned.slice(jsonStart, jsonEnd + 1));
+      const parsed = ResultSchema.safeParse(raw);
+      if (!parsed.success) {
+        console.error("Fallback parse falhou:", parsed.error.message);
+        return { items: [], error: "Formato inesperado retornado pela IA." };
+      }
+      return { items: parsed.data.items, error: null };
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       console.error("extractMenu failed:", message);
