@@ -203,6 +203,16 @@ function Index() {
           )}
         </section>
       </main>
+
+      <footer className="border-t bg-background/60 backdrop-blur-sm">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-6 py-4 text-xs text-muted-foreground sm:flex-row">
+          <span>© {new Date().getFullYear()} E.D.I. — Extrator de Dados Inteligente</span>
+          <span>
+            Desenvolvedores: <span className="text-foreground">Bruno Primo</span> e{" "}
+            <span className="text-foreground">Jose Linhares</span>
+          </span>
+        </div>
+      </footer>
     </div>
   );
 }
