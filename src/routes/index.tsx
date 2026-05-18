@@ -6,7 +6,7 @@ import { Bot } from "lucide-react";
 import { UploadZone } from "@/components/edi/UploadZone";
 import { ProcessingState } from "@/components/edi/ProcessingState";
 import { DataTable, type MenuItem } from "@/components/edi/DataTable";
-import { AdjustPanel } from "@/components/edi/AdjustPanel";
+
 import { Toaster } from "@/components/ui/sonner";
 import { extractMenu } from "@/lib/extract.functions";
 
@@ -154,27 +154,7 @@ function Index() {
     toast.success(`Exportado como ${format.toUpperCase()}`);
   };
 
-  const handleCommand = (cmd: string) => {
-    const pctMatch = cmd.match(/aumente.*?(\d+(?:[.,]\d+)?)\s*%/i);
-    const decMatch = cmd.match(/(?:diminua|reduza).*?(\d+(?:[.,]\d+)?)\s*%/i);
-    if (pctMatch) {
-      const pct = Number(pctMatch[1].replace(",", "."));
-      setItems((prev) => prev.map((i) => ({ ...i, price: +(i.price * (1 + pct / 100)).toFixed(2) })));
-      return;
-    }
-    if (decMatch) {
-      const pct = Number(decMatch[1].replace(",", "."));
-      setItems((prev) => prev.map((i) => ({ ...i, price: +(i.price * (1 - pct / 100)).toFixed(2) })));
-      return;
-    }
-    if (/arredonde/i.test(cmd)) {
-      setItems((prev) => prev.map((i) => ({ ...i, price: Math.round(i.price) })));
-      return;
-    }
-    if (/remova.*sem descri/i.test(cmd)) {
-      setItems((prev) => prev.filter((i) => i.description.trim().length > 0));
-    }
-  };
+
 
   return (
     <div className="min-h-screen" style={{ background: "var(--gradient-subtle)" }}>
