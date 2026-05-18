@@ -107,20 +107,50 @@ function Index() {
     toast("Tabela limpa");
   };
 
-  const handleExport = (format: "csv" | "xlsx") => {
+  const handleExport = async (format: "csv" | "xlsx") => {
     if (!items.length) return;
-    const header = ["Produto", "Preço", "Descrição"];
-    const rows = items.map((i) => [i.name, i.price.toFixed(2), i.description]);
-    const csv = [header, ...rows]
-      .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))
-      .join("\n");
-    const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `cardapio.${format === "xlsx" ? "csv" : "csv"}`;
-    a.click();
-    URL.revokeObjectURL(url);
+    const XLSX = await import("xlsx");
+
+    const rows = items.map((i, idx) => ({
+      "#": idx + 1,
+      Produto: i.name,
+      "Preço (R$)": Number(i.price.toFixed(2)),
+      Descrição: i.description || "",
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    worksheet["!cols"] = [
+      { wch: 5 },
+      { wch: 38 },
+      { wch: 14 },
+      { wch: 60 },
+    ];
+    // Formata coluna de preço como moeda BRL
+    const range = XLSX.utils.decode_range(worksheet["!ref"] || "A1");
+    for (let r = 1; r <= range.e.r; r++) {
+      const cell = worksheet[XLSX.utils.encode_cell({ r, c: 2 })];
+      if (cell) cell.z = '"R$" #,##0.00';
+    }
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Cardápio");
+
+    if (format === "xlsx") {
+      XLSX.writeFile(workbook, "cardapio.xlsx", { bookType: "xlsx" });
+    } else {
+      // CSV com separador ; (padrão pt-BR p/ Excel) e BOM UTF-8
+      const csvBody = XLSX.utils.sheet_to_csv(worksheet, { FS: ";" });
+      const csv = "sep=;\n" + csvBody;
+      const blob = new Blob(["\ufeff" + csv], {
+        type: "text/csv;charset=utf-8;",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "cardapio.csv";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
     toast.success(`Exportado como ${format.toUpperCase()}`);
   };
 
