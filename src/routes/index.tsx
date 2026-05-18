@@ -202,7 +202,7 @@ function Index() {
         </div>
       </header>
 
-      <main className="mx-auto grid max-w-7xl gap-6 px-6 py-8 lg:grid-cols-[1fr_360px]">
+      <main className="mx-auto max-w-7xl px-6 py-8">
         <section className="space-y-6">
           <div>
             <h2 className="text-2xl font-semibold tracking-tight text-foreground">
@@ -222,10 +222,6 @@ function Index() {
             </>
           )}
         </section>
-
-        <div className="lg:sticky lg:top-6 lg:h-[calc(100vh-7rem)]">
-          <AdjustPanel onCommand={handleCommand} />
-        </div>
       </main>
     </div>
   );
