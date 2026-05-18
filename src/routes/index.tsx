@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Sparkles } from "lucide-react";
+import { Bot } from "lucide-react";
 import { UploadZone } from "@/components/edi/UploadZone";
 import { ProcessingState } from "@/components/edi/ProcessingState";
 import { DataTable, type MenuItem } from "@/components/edi/DataTable";
@@ -183,13 +183,16 @@ function Index() {
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-3">
             <div
-              className="flex h-9 w-9 items-center justify-center rounded-lg text-primary-foreground"
+              className="flex h-10 w-10 items-center justify-center rounded-xl text-primary-foreground"
               style={{ background: "var(--gradient-primary)", boxShadow: "var(--shadow-elegant)" }}
             >
-              <Sparkles className="h-4 w-4" />
+              <Bot className="h-5 w-5" />
             </div>
-            <div>
-              <h1 className="text-base font-semibold tracking-tight text-foreground">E.D.I.</h1>
+            <div className="flex flex-col leading-tight">
+              <div className="flex items-center gap-1.5">
+                <h1 className="text-base font-semibold tracking-tight text-foreground">E.D.I.</h1>
+                <Bot className="h-4 w-4 text-primary" aria-hidden="true" />
+              </div>
               <p className="text-xs text-muted-foreground">Extrator de Dados Inteligente</p>
             </div>
           </div>
