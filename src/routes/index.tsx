@@ -6,7 +6,7 @@ import { Bot } from "lucide-react";
 import { UploadZone } from "@/components/edi/UploadZone";
 import { ProcessingState } from "@/components/edi/ProcessingState";
 import { DataTable, type MenuItem } from "@/components/edi/DataTable";
-import { AdjustPanel } from "@/components/edi/AdjustPanel";
+
 import { Toaster } from "@/components/ui/sonner";
 import { extractMenu } from "@/lib/extract.functions";
 
@@ -154,27 +154,7 @@ function Index() {
     toast.success(`Exportado como ${format.toUpperCase()}`);
   };
 
-  const handleCommand = (cmd: string) => {
-    const pctMatch = cmd.match(/aumente.*?(\d+(?:[.,]\d+)?)\s*%/i);
-    const decMatch = cmd.match(/(?:diminua|reduza).*?(\d+(?:[.,]\d+)?)\s*%/i);
-    if (pctMatch) {
-      const pct = Number(pctMatch[1].replace(",", "."));
-      setItems((prev) => prev.map((i) => ({ ...i, price: +(i.price * (1 + pct / 100)).toFixed(2) })));
-      return;
-    }
-    if (decMatch) {
-      const pct = Number(decMatch[1].replace(",", "."));
-      setItems((prev) => prev.map((i) => ({ ...i, price: +(i.price * (1 - pct / 100)).toFixed(2) })));
-      return;
-    }
-    if (/arredonde/i.test(cmd)) {
-      setItems((prev) => prev.map((i) => ({ ...i, price: Math.round(i.price) })));
-      return;
-    }
-    if (/remova.*sem descri/i.test(cmd)) {
-      setItems((prev) => prev.filter((i) => i.description.trim().length > 0));
-    }
-  };
+
 
   return (
     <div className="min-h-screen" style={{ background: "var(--gradient-subtle)" }}>
@@ -202,7 +182,7 @@ function Index() {
         </div>
       </header>
 
-      <main className="mx-auto grid max-w-7xl gap-6 px-6 py-8 lg:grid-cols-[1fr_360px]">
+      <main className="mx-auto max-w-7xl px-6 py-8">
         <section className="space-y-6">
           <div>
             <h2 className="text-2xl font-semibold tracking-tight text-foreground">
@@ -222,10 +202,6 @@ function Index() {
             </>
           )}
         </section>
-
-        <div className="lg:sticky lg:top-6 lg:h-[calc(100vh-7rem)]">
-          <AdjustPanel onCommand={handleCommand} />
-        </div>
       </main>
     </div>
   );
