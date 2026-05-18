@@ -138,10 +138,10 @@ function Index() {
     if (format === "xlsx") {
       XLSX.writeFile(workbook, "cardapio.xlsx", { bookType: "xlsx" });
     } else {
-      // CSV com separador ; (padrão pt-BR p/ Excel) e BOM UTF-8
-      const csvBody = XLSX.utils.sheet_to_csv(worksheet, { FS: ";" });
-      const csv = "sep=;\n" + csvBody;
-      const blob = new Blob(["\ufeff" + csv], {
+      // CSV UTF-8 com BOM + separador ';' (Excel pt-BR abre em colunas e respeita acentos/Ç)
+      const csvBody = XLSX.utils.sheet_to_csv(worksheet, { FS: ";", RS: "\r\n" });
+      const bom = "\ufeff";
+      const blob = new Blob([bom + csvBody], {
         type: "text/csv;charset=utf-8;",
       });
       const url = URL.createObjectURL(blob);
