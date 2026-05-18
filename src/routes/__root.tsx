@@ -76,10 +76,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "description", content: "Envie cardápios em PDF ou imagem e extraia produtos, preços e descrições com IA." },
       { name: "author", content: "E.D.I." },
       { property: "og:title", content: "E.D.I. — Extrator de Dados Inteligente" },
-      { property: "og:description", content: "Cardápios em PDF/imagem viram tabela estruturada em segundos." },
+      { property: "og:description", content: "Envie cardápios em PDF ou imagem e extraia produtos, preços e descrições com IA." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "E.D.I. — Extrator de Dados Inteligente" },
+      { name: "twitter:description", content: "Envie cardápios em PDF ou imagem e extraia produtos, preços e descrições com IA." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/585079ce-0432-4484-a275-dd6b1f2f9541/id-preview-99b3f813--0b7cabde-8628-4b5a-b4c9-1f86567f5bb1.lovable.app-1779104773931.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/585079ce-0432-4484-a275-dd6b1f2f9541/id-preview-99b3f813--0b7cabde-8628-4b5a-b4c9-1f86567f5bb1.lovable.app-1779104773931.png" },
     ],
     links: [
       {
