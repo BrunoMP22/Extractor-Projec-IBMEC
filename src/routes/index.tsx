@@ -6,6 +6,7 @@ import { Bot } from "lucide-react";
 import { UploadZone } from "@/components/edi/UploadZone";
 import { ProcessingState } from "@/components/edi/ProcessingState";
 import { DataTable, type MenuItem } from "@/components/edi/DataTable";
+import { PriceChart } from "@/components/edi/PriceChart";
 
 import { Toaster } from "@/components/ui/sonner";
 import { extractMenu } from "@/lib/extract.functions";
@@ -198,6 +199,7 @@ function Index() {
           {state === "ready" && (
             <>
               <DataTable items={items} onClear={handleClear} onExport={handleExport} />
+              <PriceChart items={items} />
               <UploadZone onUpload={handleUpload} />
             </>
           )}
