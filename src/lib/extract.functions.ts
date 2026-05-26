@@ -33,8 +33,12 @@ export const extractMenu = createServerFn({ method: "POST" })
       "1. Extraia APENAS itens REALMENTE visíveis. NUNCA invente.\n" +
       "2. Preserve grafia e acentos.\n" +
       "3. Preço: número decimal em reais (ex: 29.90). Se ilegível/ausente, use 0.\n" +
-      "4. Descrição: somente o que está escrito junto ao item; se não houver, use ''.\n" +
-      "5. Ignore cabeçalhos, endereços, telefones, redes sociais, promoções.\n" +
+      "4. ASSOCIAÇÃO DE DESCRIÇÃO (CRÍTICO): analise a estrutura visual do documento (blocos, colunas, espaçamento, alinhamento, separadores, agrupamentos tipográficos). Associe nome, descrição e preço SOMENTE quando fizerem parte do MESMO bloco visual do prato.\n" +
+      "   - NUNCA reutilize a mesma descrição em pratos diferentes.\n" +
+      "   - NUNCA herde a descrição de um item vizinho (acima, abaixo, ao lado) só por proximidade física.\n" +
+      "   - Se houver QUALQUER dúvida sobre a qual prato a descrição pertence, deixe description = '' em vez de adivinhar.\n" +
+      "   - Uma descrição só é válida se estiver claramente agrupada (mesmo bloco/cartão/parágrafo) com o nome do prato.\n" +
+      "5. Ignore cabeçalhos, endereços, telefones, redes sociais, promoções, categorias e seções.\n" +
       "6. Se não for cardápio ou estiver ilegível, retorne items: [].";
 
     const userContent = [
