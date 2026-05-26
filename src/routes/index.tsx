@@ -199,6 +199,7 @@ function Index() {
           {state === "ready" && (
             <>
               <DataTable items={items} onClear={handleClear} onExport={handleExport} />
+              <PriceChart items={items} />
               <UploadZone onUpload={handleUpload} />
             </>
           )}
